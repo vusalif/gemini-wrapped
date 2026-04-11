@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Activity Heatmap</title>
+    <meta name="description" content="Upload your Google Takeout ZIP to visualize your Gemini chat activity as a GitHub-style heatmap.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <main id="app">
+        <header id="header">
+            <h1>Gemini Activity Heatmap</h1>
+            <p class="subtitle">Upload your Google Takeout <code>.zip</code> or <code>MyActivity.html</code> to visualize your Gemini chat activity.</p>
+        </header>
+
+        <!-- Upload -->
+        <section id="upload-section">
+            <div id="drop-zone" role="button" tabindex="0" aria-label="Upload ZIP file">
+                <div class="drop-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                </div>
+                <p class="drop-text">Drop your <code>.zip</code> or <code>.html</code> file here</p>
+                <p class="drop-hint">or click to browse</p>
+                <input type="file" id="file-input" accept=".zip,.html" hidden>
+            </div>
+        </section>
+
+        <!-- Loading -->
+        <section id="loading-section" class="hidden">
+            <div class="spinner"></div>
+            <p class="loading-text">Processing your data…</p>
+        </section>
+
+        <!-- Error -->
+        <section id="error-section" class="hidden">
+            <p id="error-message"></p>
+            <button id="retry-btn" type="button">Try again</button>
+        </section>
+
+        <!-- Results -->
+        <section id="result-section" class="hidden">
+            <!-- Tabs -->
+            <div id="tab-bar">
+                <button class="tab-btn active" data-tab="heatmap" type="button">Heatmap</button>
+                <button class="tab-btn" data-tab="3d" type="button">3D View</button>
+                <button class="tab-btn" data-tab="graph" type="button">Graph</button>
+                <div class="tab-actions" style="margin-left: auto; display: flex; gap: 4px;">
+                    <button id="about-btn" class="icon-btn" type="button" title="About" aria-label="About" style="margin-left: 0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                    </button>
+                    <button id="download-btn" class="icon-btn" type="button" title="Download Image" aria-label="Download Image" style="margin-left: 0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                    </button>
+                    <button id="settings-btn" class="icon-btn" type="button" title="Settings" aria-label="Settings" style="margin-left: 0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2D heatmap tab -->
+            <div id="tab-heatmap" class="tab-panel">
+                <div style="display: flex; justify-content: flex-start; max-width: 880px; margin: 0 auto 12px auto; padding-left: 2px;">
+                    <a href="https://github.com/vusalif/gemini-wrapped.git" target="_blank" class="github-star-btn" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 500; color: var(--secondary); opacity: 0.7; text-decoration: none; padding: 4px 10px; border: 1px solid rgba(43,43,43,0.15); border-radius: 6px; background: var(--bg); transition: opacity 0.15s, background 0.15s;">
+                        <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+                            <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"></path>
+                        </svg>
+                        Star on GitHub
+                    </a>
+                </div>
+                <div id="heatmap-container"></div>
+                <div id="legend-container"></div>
+            </div>
+
+            <!-- 3D view tab -->
+            <div id="tab-3d" class="tab-panel hidden">
+                <div id="three-container"></div>
+                <div id="three-tooltip"></div>
+            </div>
+
+            <!-- Graph tab -->
+            <div id="tab-graph" class="tab-panel hidden">
+                <div class="graph-header" style="display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                    <select id="graph-speed-select" class="settings-select" style="width: auto; padding: 6px 12px; font-size: 0.8rem; margin: 0;">
+                        <option value="500">Fast</option>
+                        <option value="1200" selected>Normal</option>
+                        <option value="3000">Slow</option>
+                    </select>
+                    <select id="graph-type-select" class="settings-select" style="width: auto; padding: 6px 12px; font-size: 0.8rem; margin: 0;">
+                        <option value="cumulative">Cumulative Progress</option>
+                        <option value="daily">Daily Prompts</option>
+                    </select>
+                    <button id="play-graph-btn" class="icon-btn" style="background: rgba(43,43,43,0.05); border-radius: 6px; padding: 6px 12px; display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 0.8rem; width: auto;" type="button">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                           <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        Replay
+                    </button>
+                </div>
+                <div id="graph-container" style="position: relative; width: 100%; height: 480px;">
+                    <canvas id="graph-canvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Prompts tab -->
+            <div id="tab-prompts" class="tab-panel hidden">
+                <div class="prompts-layout">
+                    <!-- Left side: visualization -->
+                    <div class="prompts-viz-container">
+                        <canvas id="prompts-canvas"></canvas>
+                    </div>
+                    <!-- Right side: list of prompts -->
+                    <div class="prompts-list-container">
+                        <h3 class="prompts-title">Your Prompts</h3>
+                        <div id="prompts-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="stats-container"></div>
+
+            <!-- Removed reset button per user request -->
+        </section>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="hidden">
+        <div id="settings-overlay"></div>
+        <div id="settings-panel">
+            <div class="settings-header">
+                <span class="settings-title">Settings</span>
+                <button id="settings-close" class="icon-btn" type="button" aria-label="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="settings-row">
+                <p class="settings-section-label">Timeline</p>
+                <select id="timeline-select" class="settings-select">
+                    <option value="7">Last 7 days</option>
+                    <option value="30">Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                    <option value="180">Last 180 days</option>
+                    <option value="365" selected>Last 365 days</option>
+                </select>
+            </div>
+
+            <p class="settings-section-label">Heatmap Color</p>
+            <div id="swatches-container"></div>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div id="about-modal" class="hidden">
+        <div id="about-overlay" style="position: fixed; inset: 0; background: rgba(43, 43, 43, 0.25); z-index: 100;"></div>
+        <div id="about-panel" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg); border: 1.5px solid rgba(43, 43, 43, 0.12); border-radius: 16px; padding: 28px 32px; z-index: 101; min-width: 320px; box-shadow: 0 12px 40px rgba(43, 43, 43, 0.12);">
+            <div class="settings-header">
+                <span class="settings-title">About</span>
+                <button id="about-close" class="icon-btn" type="button" aria-label="Close" style="margin-left: auto;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="settings-row" style="font-size: 0.9rem; line-height: 1.5; opacity: 0.8; color: var(--secondary);">
+                <p>Visualize your Google Gemini chat history.</p>
+                <br>
+                <p>Gemini Wrapped parses your Google Takeout zip completely locally in your browser. All processing is strictly confined to your device to preserve full privacy.</p>
+                <br>
+                <p>Powered by Chart.js, Three.js, and vanilla HTML/JS.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
