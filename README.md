@@ -1,8 +1,7 @@
-# Gemini Wrapped 🌌
+![Gemini Wrapped Demo](gif.gif)
 
 Visualize your Google Gemini activity with a beautiful, GitHub-style heatmap and interactive dashboard. 100% private, 100% local.
 
-![Gemini Wrapped Demo](gif.gif)
 
 ## Features
 - **GitHub-Style Heatmap**: Track your daily prompts over the last year.
@@ -18,12 +17,6 @@ Visualize your Google Gemini activity with a beautiful, GitHub-style heatmap and
 4. Click **"All activity data included"** -> **"Deselect all"** -> select only **"Gemini"**.
 5. Create export and wait for the email.
 6. Drop your `.zip` or `MyActivity.html` file into the app at [gemini.rot.bio](https://gemini.rot.bio).
-
-## Development
-This is a vanilla JS project using:
-- **Three.js** (3D View)
-- **Chart.js** (Analytics)
-- **JSZip** (Zip Parsing)
 
 ## License
 Open Source. Feel free to use and star! ⭐
