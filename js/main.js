@@ -30,6 +30,7 @@ const tabHeatmap = document.getElementById('tab-heatmap');
 const tab3d = document.getElementById('tab-3d');
 const tabGraph = document.getElementById('tab-graph');
 const tabPrompts = document.getElementById('tab-prompts');
+const faqSection = document.getElementById('faq-section');
 
 const graphTypeSelect = document.getElementById('graph-type-select');
 const graphSpeedSelect = document.getElementById('graph-speed-select');
@@ -65,6 +66,10 @@ function showSection(name) {
     };
     Object.values(map).forEach(el => el.classList.add('hidden'));
     map[name]?.classList.remove('hidden');
+
+    if (faqSection) {
+        faqSection.classList.toggle('hidden', name === 'result' || name === 'loading');
+    }
 }
 
 /* ---------- File Handling ---------- */
@@ -353,6 +358,14 @@ function initApp() {
             }
         });
     }
+
+    // FAQ Accordion logic
+    document.querySelectorAll('.faq-question').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const item = btn.parentElement;
+            item.classList.toggle('active');
+        });
+    });
 }
 
 /**
