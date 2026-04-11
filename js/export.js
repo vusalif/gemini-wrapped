@@ -1,5 +1,5 @@
 /**
- * Image export module — generates a 1080x1920 summary card.
+ * Image export module — generates a high-fidelity 1080x1920 summary card.
  * @module export
  */
 
@@ -12,17 +12,23 @@ import { formatDateForDisplay } from './utils.js';
 export async function exportToImage(dateCounts) {
     if (!dateCounts || dateCounts.size === 0) return;
 
-    const width = 1080;
-    const height = 1920;
+    // Use a higher internal scale for "retina" quality sharpness
+    const scale = 2;
+    const baseW = 1080;
+    const baseH = 1920;
+    const width = baseW * scale;
+    const height = baseH * scale;
+
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
 
     // Wait for fonts to be ready
     await document.fonts.ready;
 
-    // Stats
+    // Stats calculation
     let total = 0;
     let maxVal = 0;
     let maxKey = '';
@@ -33,76 +39,123 @@ export async function exportToImage(dateCounts) {
     const activeDays = dateCounts.size;
     const busiestDay = maxKey ? formatDateForDisplay(maxKey) : 'N/A';
 
-    // Styling
+    // Styling constants
     const bg = '#f5f5ed';
     const secondary = '#2b2b2b';
     const accent = '#a1b9ed';
 
-    // Draw Background
+    // 1. Draw solid background
     ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, width, height);
+    ctx.fillRect(0, 0, baseW, baseH);
 
-    // Accent Decorations
-    ctx.fillStyle = accent;
-    ctx.globalAlpha = 0.15;
-    ctx.beginPath();
-    ctx.arc(width, 0, 800, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(0, height, 600, 0, Math.PI * 2);
-    ctx.fill();
+    // 2. Subtle background noise texture for "human-made" warmth
+    ctx.globalAlpha = 0.03;
+    for (let i = 0; i < 10000; i++) {
+        const x = Math.random() * baseW;
+        const y = Math.random() * baseH;
+        ctx.fillStyle = secondary;
+        ctx.fillRect(x, y, 1.5, 1.5);
+    }
     ctx.globalAlpha = 1.0;
+
+    // 3. Artistic Background Elements (Glows)
+    const drawGlow = (x, y, radius, color) => {
+        const grd = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        grd.addColorStop(0, color);
+        grd.addColorStop(1, 'transparent');
+        ctx.fillStyle = grd;
+        ctx.globalAlpha = 0.15;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+    };
+    drawGlow(baseW * 0.8, 200, 600, accent);
+    drawGlow(baseW * 0.2, baseH * 0.8, 800, accent);
+
+    // 4. Header Section
+    ctx.textAlign = 'center';
+    ctx.fillStyle = secondary;
+    
+    // Badge
+    const badgeY = 180;
+    ctx.font = '600 24px "Inter", sans-serif';
+    const badgeText = `GEMINI WRAPPED ${new Date().getFullYear()}`;
+    const badgeW = ctx.measureText(badgeText).width + 40;
+    ctx.fillStyle = secondary;
+    ctx.beginPath();
+    ctx.roundRect(baseW / 2 - badgeW / 2, badgeY - 26, badgeW, 44, 22);
+    ctx.fill();
+    ctx.fillStyle = bg;
+    ctx.fillText(badgeText, baseW / 2, badgeY + 4);
 
     // Title
     ctx.fillStyle = secondary;
-    ctx.textAlign = 'center';
-    ctx.font = '700 80px "Inter", sans-serif';
-    ctx.fillText('GEMINI', width / 2, 300);
-    ctx.fillText('WRAPPED', width / 2, 410);
+    ctx.font = '700 96px "Inter", sans-serif';
+    ctx.fillText('My Activity', baseW / 2, 360);
 
-    // Separator
-    ctx.strokeStyle = secondary;
-    ctx.globalAlpha = 0.1;
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(340, 480);
-    ctx.lineTo(740, 480);
-    ctx.stroke();
-    ctx.globalAlpha = 1.0;
-
-    // Helper to draw a stat block
-    const drawStatBlock = (label, value, y) => {
-        ctx.textAlign = 'center';
+    // 5. Stat Cards Helper
+    const drawStatCard = (label, value, y) => {
+        const cardW = 860;
+        const cardH = 240;
+        const cardX = (baseW - cardW) / 2;
         
+        // Card Body
+        ctx.fillStyle = 'white';
+        ctx.globalAlpha = 0.4;
+        ctx.beginPath();
+        ctx.roundRect(cardX, y, cardW, cardH, 24);
+        ctx.fill();
+        
+        // Subtle Border
+        ctx.strokeStyle = secondary;
+        ctx.globalAlpha = 0.06;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.globalAlpha = 1.0;
+
+        // Content
+        ctx.textAlign = 'center';
         ctx.fillStyle = secondary;
-        ctx.globalAlpha = 0.45;
-        ctx.font = '500 32px "Inter", sans-serif';
-        ctx.fillText(label.toUpperCase(), width / 2, y);
+        ctx.globalAlpha = 0.5;
+        ctx.font = '600 28px "Inter", sans-serif';
+        ctx.fillText(label.toUpperCase(), baseW / 2, y + 70);
         
         ctx.globalAlpha = 1.0;
-        ctx.font = '700 110px "Inter", sans-serif';
-        // Adjust font size for long dates
-        if (value.length > 12) ctx.font = '700 80px "Inter", sans-serif';
-        ctx.fillText(value, width / 2, y + 130);
+        ctx.font = '700 84px "Inter", sans-serif';
+        // Handle long dates
+        let displayVal = value;
+        if (value.length > 15) {
+            ctx.font = '700 64px "Inter", sans-serif';
+        }
+        ctx.fillText(displayVal, baseW / 2, y + 170);
     };
 
-    const statsY = 700;
-    const spacing = 280;
+    const startY = 520;
+    const gap = 280;
 
-    drawStatBlock('total prompts', total.toLocaleString(), statsY);
-    drawStatBlock('active days', activeDays.toLocaleString(), statsY + spacing);
-    drawStatBlock('most in a day', maxVal.toLocaleString(), statsY + spacing * 2);
-    drawStatBlock('busiest day', busiestDay, statsY + spacing * 3);
+    drawStatCard('Total Prompts Shared', total.toLocaleString(), startY);
+    drawStatCard('Days with Gemini', activeDays.toLocaleString(), startY + gap);
+    drawStatCard('Peak Daily Activity', maxVal.toLocaleString(), startY + gap * 2);
+    drawStatCard('Most Active On', busiestDay, startY + gap * 3);
 
-    // Footer
+    // 6. Footer
+    ctx.textAlign = 'center';
     ctx.fillStyle = secondary;
-    ctx.globalAlpha = 0.3;
-    ctx.font = '500 28px "Inter", sans-serif';
-    ctx.fillText('gemini-wrapped.com', width / 2, height - 120);
+    ctx.globalAlpha = 0.4;
+    ctx.font = '600 32px "Inter", sans-serif';
+    ctx.fillText('gemini.rot.bio', baseW / 2, baseH - 120);
+    
+    // Aesthetic dot detail
+    ctx.globalAlpha = 0.1;
+    ctx.beginPath();
+    ctx.arc(baseW / 2, baseH - 180, 4, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Trigger download
+    // Trigger high-quality download
     const link = document.createElement('a');
-    link.download = `gemini-stats-${new Date().getFullYear()}.png`;
+    link.download = `gemini-wrapped-${new Date().getFullYear()}.png`;
+    // Use maximum quality (1.0) for PNG
     link.href = canvas.toDataURL('image/png', 1.0);
     link.click();
 }
