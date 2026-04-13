@@ -17,6 +17,7 @@ Visualize your Google Gemini activity with a beautiful, GitHub-style heatmap and
 4. Click **"All activity data included"** -> **"Deselect all"** -> select only **"Gemini"**.
 5. Create export and wait for the email.
 6. Drop your `.zip` or `MyActivity.html` file into the app at [gemini.rot.bio](https://gemini.rot.bio).
+   
 
 ## License
 Open Source. Feel free to use and star! ⭐
